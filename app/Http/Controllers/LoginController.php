@@ -17,7 +17,7 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
         $user = User::where('email', '=', $data->email)->first();
-        
+        dd($request->all());
         if(Hash::check($data->password, $user->password)){
             return response()->json([
                 'logged' => true,
@@ -28,7 +28,7 @@ class LoginController extends Controller
                 'email' => $user->email,
             ]);
         }else{
-            dd($request->all());
+            
            throw ValidationException::withMessages([
                'email' => 'You have entered an invalid username or password'
            ]);
