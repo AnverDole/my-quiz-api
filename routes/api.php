@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 
-Route::post('/login', 'App\\Http\\Controllers\\LoginController@Login')->middleware('guest');
-Route::post('/register', 'App\\Http\\Controllers\\RegisterController@Register')->middleware('guest:api');
+Route::post('/login', 'App\\Http\\Controllers\\LoginController@Login')->middleware('guest:api');
+Route::get('/register', 'App\\Http\\Controllers\\RegisterController@Register')->middleware('guest:api');
 Route::post('/logout', 'App\\Http\\Controllers\\LoginController@Logout')->middleware('auth:api');
 Route::post("/subjects" ,'App\\Http\\Controllers\\SubjectController@index')->middleware('auth:api');
 
