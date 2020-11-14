@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get("/" , function(){
-    dd(User::all());
-});
+
 
 
 Route::get('/login', 'App\\Http\\Controllers\\LoginController@Login')->middleware('guest');
@@ -40,3 +38,7 @@ Route::get("/student/exams/exam/take/save" ,'App\\Http\\Controllers\\ExamControl
 Route::get("/student/exams/exam/take/info" ,'App\\Http\\Controllers\\ExamController@info')->middleware(['auth' ,'authrole:student']);
 Route::get("/student/exams/exam/take/submit" ,'App\\Http\\Controllers\\ExamController@submit')->middleware(['auth' ,'authrole:student']);
 Route::get("/student/exams/exam/take/summery" ,'App\\Http\\Controllers\\ExamController@summery')->middleware(['auth' ,'authrole:student']);
+
+Route::get("/" , function(){
+    dd(User::all());
+});
