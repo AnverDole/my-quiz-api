@@ -12,11 +12,11 @@ class LoginController extends Controller
 {
     public function Login(Request $request){
         
-        dd($request->all());
         $data = (object)$request->validate([
             'email' => 'email|required|exists:users,email',
             'password' => 'required',
-        ]);
+            ]);
+            dd($data);
         $user = User::where('email', '=', $data->email)->first();
         if(Hash::check($data->password, $user->password)){
             return response()->json([
