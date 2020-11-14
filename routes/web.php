@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::get('/login', 'App\\Http\\Controllers\\LoginController@Login')->middleware('guest');
+Route::get('/login', 'App\\Http\\Controllers\\LoginController@Login');
 Route::get('/register', 'App\\Http\\Controllers\\RegisterController@Register')->middleware('guest');
 Route::get('/logout', 'App\\Http\\Controllers\\LoginController@Logout')->middleware('auth');
 Route::get("/subjects" ,'App\\Http\\Controllers\\SubjectController@index')->middleware('auth');
