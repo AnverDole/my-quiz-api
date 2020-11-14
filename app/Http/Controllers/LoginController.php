@@ -16,7 +16,7 @@ class LoginController extends Controller
             'email' => 'email|required|exists:users,email',
             'password' => 'required',
         ]);
-       dd($data);
+       
         $user = User::where('email', '=', $data->email)->first();
         if(Hash::check($data->password, $user->password)){
             return response()->json([
