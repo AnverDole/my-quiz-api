@@ -91,9 +91,9 @@ trait CreateEditExamHelpers
         $this->ExamInfoErrors($messagebag, $errors);
 
         $this->prepireNoQuestionsError($messagebag, $errors);
-        $this->prepireMcqQuestionErrors($messagebag, $errors);
-
+        
         #region prepire mcq errors.
+        $this->prepireMcqQuestionErrors($messagebag, $errors);
         $this->prepireNoMcqAnswersError($messagebag, $errors);
         $this->prepireMcqAnswerBodyError($messagebag, $errors);
         $this->prepireCorrectMcqAnswerErrors($messagebag, $errors);
@@ -107,7 +107,7 @@ trait CreateEditExamHelpers
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function ExamInfoErrors($messagebag, $errors)
+    private function ExamInfoErrors($messagebag, &$errors)
     {
         // exam id errors
         if ($messagebag->has("id")) {
@@ -132,7 +132,7 @@ trait CreateEditExamHelpers
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function prepireNoQuestionsError($messagebag, $errors)
+    private function prepireNoQuestionsError($messagebag, &$errors)
     {
         if ($messagebag->has('questions.mcq')) {
             $errors->questionerrors = (object)[
@@ -146,7 +146,7 @@ trait CreateEditExamHelpers
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function prepireMcqQuestionErrors($messagebag, $errors)
+    private function prepireMcqQuestionErrors($messagebag, &$errors)
     {
 
         //prepire the each mcq question's question error message.
@@ -188,9 +188,8 @@ trait CreateEditExamHelpers
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function prepireNoMcqAnswersError($messagebag, $errors)
+    private function prepireNoMcqAnswersError($messagebag, &$errors)
     {
-
         foreach ($messagebag->get('questions.mcq.*.answers') as $key => $message) {
             $questionid = $this->extractId($key, 0);
 
@@ -209,7 +208,7 @@ trait CreateEditExamHelpers
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function prepireMcqAnswerBodyError($messagebag, $errors)
+    private function prepireMcqAnswerBodyError($messagebag, &$errors)
     {
         if ($messagebag->has('questions.mcq.*.answers.*.answer')) {
 
@@ -240,7 +239,7 @@ trait CreateEditExamHelpers
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function prepireCorrectMcqAnswerErrors($messagebag, $errors)
+    private function prepireCorrectMcqAnswerErrors($messagebag, &$errors)
     {
         if ($messagebag->has('questions.mcq.*.correctanswerid')) {
             foreach ($messagebag->get('questions.mcq.*.correctanswerid') as $key => $message) {
