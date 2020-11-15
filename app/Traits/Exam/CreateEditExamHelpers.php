@@ -215,7 +215,6 @@ trait CreateEditExamHelpers
             foreach ($messagebag->get('questions.mcq.*.answers.*.answer') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
                 $answerkey = $this->extractId($key, 1);
-                $errors = (object)[];
 
                 //prepire the output errors object. 
                 $this->defineQuestionErrorsObjectIfNotDefined($errors);
