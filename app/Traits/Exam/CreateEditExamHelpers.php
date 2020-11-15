@@ -25,12 +25,11 @@ trait CreateEditExamHelpers
      */
     function ValidateCorrectMcqAnswers($validator, $request)
     {
-        if ($request->input('questions.mcq.*') == null || count($request->input('questions.mcq.*')) < 1) {
-            return;
-        }
+        if (is_null($request->input('questions.mcq.*')) || count($request->input('questions.mcq.*')) < 1) return;
+
         //loop thrug each mcq
         foreach ($request->input('questions.mcq.*') ?? [] as $key => $mcq) {
-            $answers_iscorrect_arr = $request->input("questions.mcq.$key.answers.*.is_correct");
+            $answers_iscorrect_arr = $request->input("questions.mcq.$key.answers.*.is_correct") ?? [];
             if (count(array_keys($answers_iscorrect_arr, 1)) != 1) {
                 $validator->errors()->add("questions.mcq.$key.correctanswerid",  'The question shuld have one correct answer.');
             }
@@ -98,12 +97,13 @@ trait CreateEditExamHelpers
 
         $this->McqAnswerError($messagebag, $errors);
         $this->McqAnswerErrors($messagebag, $errors);
-
-
         $this->McqCorrectAnswersErrors($messagebag, $errors);
 
+
+        // $this->checkMcqErrors($messagebag, $errors);
         return response()->json(["errors" => (array)$errors], 422);
     }
+
     /**
      * Set exam info(subject, duration, title) errors into the given error object. 
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
@@ -135,9 +135,15 @@ trait CreateEditExamHelpers
      */
     private function McqQuestionErrors($messagebag, $errors)
     {
+
         if ($messagebag->has('questions.mcq.*.question')) {
             foreach ($messagebag->get('questions.mcq.*.question') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
+
+                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
+                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [];
+                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
+
                 $errors->questionerrors->questions["mcq"][$questionid] = (object)[
                     'id' => $questionid,
                     'message' => $message,
@@ -147,6 +153,11 @@ trait CreateEditExamHelpers
         if ($messagebag->has('questions.mcq.*.correctanswer')) {
             foreach ($messagebag->get('questions.mcq.*.correctanswer') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
+
+                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
+                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [];
+                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
+
                 $errors->questionerrors->questions["mcq"][$questionid] = (object)[
                     'id' => $questionid,
                     'correctanswer' => $message,
@@ -166,9 +177,10 @@ trait CreateEditExamHelpers
         foreach ($messagebag->get('questions.mcq.*.answers') as $key => $message) {
             $questionid = $this->extractId($key, 0);
 
-            if (!isset($errors->questionerrors->questions["mcq"][$questionid])) {
-                $errors->questionerrors->questions["mcq"][$questionid] = (object)["id" => $questionid];
-            }
+            if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
+            if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [];
+            if (!isset($errors->questionerrors->questions['mcq'])) $errors->questionerrors->questions['mcq'] = (object)[];
+            if (!isset($errors->questionerrors->questions["mcq"][$questionid])) $errors->questionerrors->questions["mcq"][$questionid] = (object)[];
 
             $errors->questionerrors->questions["mcq"][$questionid]->answererrors = (object)["message" => $message];
         }
@@ -189,13 +201,12 @@ trait CreateEditExamHelpers
                 $questionid = $this->extractId($key, 0);
                 $answerkey = $this->extractId($key, 1);
 
-                if (!isset($errors->questionerrors->questions["mcq"][$questionid])) {
-                    $errors->questionerrors->questions["mcq"][$questionid] = (object)["id" => $questionid];
-                }
-                if (!isset($errors->questionerrors->questions["mcq"][$questionid]->answererrors)) {
-                    $errors->questionerrors->questions["mcq"][$questionid]->answererrors = (object)[];
-                }
+                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
+                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [[$questionid] => (object)["id" => $questionid]];
+                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
+                if (!isset($errors->questionerrors->questions["mcq"][$questionid]->answererrors)) $errors->questionerrors->questions["mcq"][$questionid]->answererrors = (object)[];
 
+                $errors->questionerrors->questions["mcq"][$questionid]->answererrors->answers = [];
                 $errors->questionerrors->questions["mcq"][$questionid]->answererrors->answers[] = (object)[
                     'id' => $answerkey,
                     'message' => $message,
@@ -214,9 +225,12 @@ trait CreateEditExamHelpers
         if ($messagebag->has('questions.mcq.*.correctanswerid')) {
             foreach ($messagebag->get('questions.mcq.*.correctanswerid') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
-                if (!isset($errors->questionerrors->questions["mcq"][$questionid])) {
-                    $errors->questionerrors->questions["mcq"][$questionid] = (object)["id" => $questionid];
-                }
+
+                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
+                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = (object)[];
+                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
+                if (!isset($errors->questionerrors->questions["mcq"][$questionid])) $errors->questionerrors->questions["mcq"][$questionid] = (object)["id" => $questionid];
+
                 $errors->questionerrors->questions["mcq"][$questionid]->correctanswerid = $message;
             }
         }
@@ -227,6 +241,7 @@ trait CreateEditExamHelpers
     #region helper functions
     private function extractId($string, $index)
     {
+        $match = [];
         preg_match_all("/\.(\d+)\.*/", $string, $match, PREG_PATTERN_ORDER);
         return $match[1][$index];
     }
