@@ -3,14 +3,9 @@
 namespace App\Traits;
 
 use App\Models\Exam\Exam;
-use App\Models\Exam\Mcq\McqQuestion;
+use App\Models\Exam\Mcq\McqAnswer;
 use App\Models\Exam\Question;
-use DateTime;
-use Exception;
 use Illuminate\Contracts\Support\MessageBag;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 trait CreateEditExamHelpers
 {
@@ -44,42 +39,45 @@ trait CreateEditExamHelpers
      * @param App\Models\Exam\Exam $exam
      * @return Illuminate\Database\Eloquent\Collection
      */
-    private function McqQuestions(Exam $exam, Object $data)
+    private function insertMcqQuestions(Exam $exam, Object $data)
     {
-        $mcqs = [];
+        $insertedmcqids = [];
         foreach ($data->questions["mcq"] as $question) {
             $createdquestion = $exam->Questions()->create([
                 "question_type" => Question::MCQ_QUESTION,
             ]);
-            $mcqs[] = $createdquestion->McqQuestion()->create([
+            $insertedmcqids[] = $createdquestion->McqQuestion()->create([
                 "question" => $question["question"],
-            ]);
+            ])->id;
+            
         }
-        return $mcqs;
+        return $insertedmcqids;
     }
 
     /**
-     * Insert mcq answers to the given questions. 
-     * @param \App\models\Exam\Question $mcqquestions mcqs that wants to update there answers.
+     * Insert and asosiate the mcq answers with previously inserted mcq questions. 
+     * @param array $mcqquestionsids each previously inserted mcqquestion ids.
      * @param object $data new mcq answers data.
      * @return void
      */
-    private function McqsAnswers($mcqquestions, $data)
+    private function insertMcqAnswersIntoMcqQuestions($mcqquestionsids, $data)
     {
         $mcqs = $data->questions["mcq"];
-        foreach ($mcqquestions as $key => $question) {
+        foreach ($mcqquestionsids as $key => $mcqquestionid) {
             $mcqquestion = $mcqs[$key];
-            $answers = array_map(function ($answer) use ($question) {
+            $answers = array_map(function ($answer) use ($mcqquestionid) {
                 return [
-                    'mcq_question_id' => $question->id,
+                    'mcq_question_id' => $mcqquestionid,
                     'answer' => $answer["answer"],
                     'is_correct' => $answer["is_correct"],
                 ];
             }, $mcqquestion['answers']);
-            $question->McqAnswers()->createMany($answers);
+            McqAnswer::insert($answers);
         }
     }
     #endregion
+
+
     #region helper functions for validation errors
 
     /**
@@ -92,20 +90,20 @@ trait CreateEditExamHelpers
         $errors = (object)[];
         $this->ExamInfoErrors($messagebag, $errors);
 
-        $this->QuestionError($messagebag, $errors);
-        $this->McqQuestionErrors($messagebag, $errors);
+        $this->prepireNoQuestionsError($messagebag, $errors);
+        $this->prepireMcqQuestionErrors($messagebag, $errors);
 
-        $this->McqAnswerError($messagebag, $errors);
-        $this->McqAnswerErrors($messagebag, $errors);
-        $this->McqCorrectAnswersErrors($messagebag, $errors);
+        #region prepire mcq errors.
+        $this->prepireNoMcqAnswersError($messagebag, $errors);
+        $this->prepireMcqAnswerBodyError($messagebag, $errors);
+        $this->prepireCorrectMcqAnswerErrors($messagebag, $errors);
+        #endregion
 
-
-        // $this->checkMcqErrors($messagebag, $errors);
         return response()->json(["errors" => (array)$errors], 422);
     }
 
     /**
-     * Set exam info(subject, duration, title) errors into the given error object. 
+     * Set exam info(subject, duration, title) errors into the given error object if present. 
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
@@ -128,114 +126,196 @@ trait CreateEditExamHelpers
             $errors->titleerror = $messagebag->get('title');
         }
     }
+
     /**
-     * Set mcq question errors into the given error object. 
+     * Set no question error into the given error object if present.
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function McqQuestionErrors($messagebag, $errors)
+    private function prepireNoQuestionsError($messagebag, $errors)
+    {
+        if ($messagebag->has('questions.mcq')) {
+            $errors->questionerrors = (object)[
+                'message' => $messagebag->get('questions.mcq'),
+            ];
+        }
+    }
+
+    /**
+     * Set mcq question(question body text) errors into the given error object if present. 
+     * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
+     * @param object $errors
+     */
+    private function prepireMcqQuestionErrors($messagebag, $errors)
     {
 
+        //prepire the each mcq question's question error message.
         if ($messagebag->has('questions.mcq.*.question')) {
             foreach ($messagebag->get('questions.mcq.*.question') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
 
-                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
-                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [];
-                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
+                //prepire the output errors object. 
+                $this->defineQuestionErrorsObjectIfNotDefined($errors);
+                $this->defineQuestionsErrorObjectIfNotDefined($errors);
+                $this->defineMcqErrorObjectIfNotDefined($errors);
+                $this->defineMcqQuestionErrorObjectIfNotDefined($errors, $questionid);
 
-                $errors->questionerrors->questions["mcq"][$questionid] = (object)[
-                    'id' => $questionid,
-                    'message' => $message,
-                ];
+                $errors->questionerrors->questions->mcq[$questionid]->id = $questionid;
+                $errors->questionerrors->questions->mcq[$questionid]->message = $message;
             }
         }
+        //prepire the each mcq question's correct answer error message.
         if ($messagebag->has('questions.mcq.*.correctanswer')) {
             foreach ($messagebag->get('questions.mcq.*.correctanswer') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
 
-                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
-                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [];
-                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
+                //prepire the output errors object. 
+                $this->defineQuestionErrorsObjectIfNotDefined($errors);
+                $this->defineQuestionsErrorObjectIfNotDefined($errors);
+                $this->defineMcqErrorObjectIfNotDefined($errors);
 
-                $errors->questionerrors->questions["mcq"][$questionid] = (object)[
+                $errors->questionerrors->questions->mcq[$questionid] = (object)[
                     'id' => $questionid,
                     'correctanswer' => $message,
                 ];
             }
         }
     }
+
     /**
-     * Set mcq answer error into the given error object.
+     * Set no mcq answers error into the given error object if present.
      * This will set the error if the mcq question has no answers. 
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function McqAnswerError($messagebag, $errors)
+    private function prepireNoMcqAnswersError($messagebag, $errors)
     {
 
         foreach ($messagebag->get('questions.mcq.*.answers') as $key => $message) {
             $questionid = $this->extractId($key, 0);
 
-            if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
-            if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [];
-            if (!isset($errors->questionerrors->questions['mcq'])) $errors->questionerrors->questions['mcq'] = (object)[];
-            if (!isset($errors->questionerrors->questions["mcq"][$questionid])) $errors->questionerrors->questions["mcq"][$questionid] = (object)[];
+            //prepire the output errors object. 
+            $this->defineQuestionErrorsObjectIfNotDefined($errors);
+            $this->defineQuestionsErrorObjectIfNotDefined($errors);
+            $this->defineMcqErrorObjectIfNotDefined($errors);
+            $this->defineMcqQuestionErrorObjectIfNotDefined($errors, $questionid);
 
-            $errors->questionerrors->questions["mcq"][$questionid]->answererrors = (object)["message" => $message];
+            $errors->questionerrors->questions->mcq[$questionid]->answererrors = (object)["message" => $message];
         }
     }
     /**
-     * Set mcq answer errors into the given error object.
-     * This will set the each answers errors(missing field errors). 
+     * Set mcq answer's answer body errors into the given error object.
+     * This will set the each answer's answer body errors(missing field, not a string.. errors). 
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function McqAnswerErrors($messagebag, $errors)
+    private function prepireMcqAnswerBodyError($messagebag, $errors)
     {
         if ($messagebag->has('questions.mcq.*.answers.*.answer')) {
 
-
-            // dd($key);
             foreach ($messagebag->get('questions.mcq.*.answers.*.answer') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
                 $answerkey = $this->extractId($key, 1);
+                $errors = (object)[];
 
-                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
-                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = [[$questionid] => (object)["id" => $questionid]];
-                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
-                if (!isset($errors->questionerrors->questions["mcq"][$questionid]->answererrors)) $errors->questionerrors->questions["mcq"][$questionid]->answererrors = (object)[];
+                //prepire the output errors object. 
+                $this->defineQuestionErrorsObjectIfNotDefined($errors);
+                $this->defineQuestionsErrorObjectIfNotDefined($errors);
+                $this->defineMcqErrorObjectIfNotDefined($errors);
+                $this->defineMcqQuestionErrorObjectIfNotDefined($errors, $questionid);
+                $this->defineMcqQuestionAnswerErrorObjectIfNotDefined($errors, $questionid);
 
-                $errors->questionerrors->questions["mcq"][$questionid]->answererrors->answers = [];
-                $errors->questionerrors->questions["mcq"][$questionid]->answererrors->answers[] = (object)[
+                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers = [];
+                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers[] = (object)[
                     'id' => $answerkey,
                     'message' => $message,
                 ];
             }
         }
     }
+
     /**
-     * Set mcq questions correct answer errors. 
-     * This will set the each answers errors(missing field errors). 
+     * Set each mcq question's correct answer errors. 
+     * This will set the each answers errors correct answer(is_correct field errors). 
      * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
      * @param object $errors
      */
-    private function McqCorrectAnswersErrors($messagebag, $errors)
+    private function prepireCorrectMcqAnswerErrors($messagebag, $errors)
     {
         if ($messagebag->has('questions.mcq.*.correctanswerid')) {
             foreach ($messagebag->get('questions.mcq.*.correctanswerid') as $key => $message) {
                 $questionid = $this->extractId($key, 0);
 
-                if (!isset($errors->questionerrors)) $errors->questionerrors = (object)[];
-                if (!isset($errors->questionerrors->questions)) $errors->questionerrors->questions = (object)[];
-                if (!isset($errors->questionerrors->questions["mcq"])) $errors->questionerrors->questions["mcq"] = [];
-                if (!isset($errors->questionerrors->questions["mcq"][$questionid])) $errors->questionerrors->questions["mcq"][$questionid] = (object)["id" => $questionid];
+                //prepire the output errors object. 
+                $this->defineQuestionErrorsObjectIfNotDefined($errors);
+                $this->defineQuestionsErrorObjectIfNotDefined($errors);
+                $this->defineMcqErrorObjectIfNotDefined($errors);
+                $this->defineMcqQuestionErrorObjectIfNotDefined($errors, $questionid);
 
-                $errors->questionerrors->questions["mcq"][$questionid]->correctanswerid = $message;
+                $errors->questionerrors->questions->mcq[$questionid]->correctanswerid = $message;
             }
         }
     }
     #endregion
+
+
+
+
+
+    #region error object initializer
+    /**
+     * define the $errors->questionerrors object if it dose not difined by previous step. 
+     * @param object $errors 
+     */
+    private function defineQuestionErrorsObjectIfNotDefined(&$errors)
+    {
+        if (!isset($errors->questionerrors)) {
+            $errors->questionerrors = (object)[];
+        }
+    }
+    /**
+     * define the $errors->questionerrors->questions object if it dose not difined by previous step. 
+     * @param object $errors 
+     */
+    private function defineQuestionsErrorObjectIfNotDefined(&$errors)
+    {
+        if (!isset($errors->questionerrors->questions)) {
+            $errors->questionerrors->questions = (object)[];
+        }
+    }
+    /**
+     * define the $errors->questionerrors->questions["mcq"] array if it dose not difined by previous step. 
+     * @param object $errors 
+     */
+    private function defineMcqErrorObjectIfNotDefined(&$errors)
+    {
+        if (!isset($errors->questionerrors->questions->mcq)) {
+            $errors->questionerrors->questions->mcq = [];
+        }
+    }
+    /**
+     * define the $errors->questionerrors->questions["mcq"][$questionid] object if it dose not difined by previous step. 
+     * @param object $errors 
+     */
+    private function defineMcqQuestionErrorObjectIfNotDefined(&$errors, $questionid)
+    {
+        if (!isset($errors->questionerrors->questions->mcq[$questionid])) {
+            $errors->questionerrors->questions->mcq[$questionid] = (object)["id" => $questionid];
+        }
+    }
+    /**
+     * define the $errors->questionerrors->questions["mcq"][$questionid]->answererrors object if it dose not difined by previous step. 
+     * @param object $errors 
+     * @param integer $questionid
+     */
+    private function defineMcqQuestionAnswerErrorObjectIfNotDefined(&$errors, $questionid)
+    {
+        if (!isset($errors->questionerrors->questions->mcq[$questionid]->answererrors)) {
+            $errors->questionerrors->questions->mcq[$questionid]->answererrors = (object)[];
+        }
+    }
+    #endregion
+
 
 
     #region helper functions
@@ -254,17 +334,5 @@ trait CreateEditExamHelpers
         $exam->Questions()->delete();
     }
     #endregion
-    /**
-     * Set question error into the given error object. 
-     * @param object @param \Illuminate\Contracts\Support\MessageBag $messagebag
-     * @param object $errors
-     */
-    private function QuestionError($messagebag, $errors)
-    {
-        if ($messagebag->has('questions.mcq')) {
-            $errors->questionerrors = (object)[
-                'message' => $messagebag->get('questions.mcq'),
-            ];
-        }
-    }
+
 }

@@ -35,11 +35,15 @@ trait EditExam
             'subject' =>  'required|integer|exists:subjects,id',
             'duration' => "required|date_format:H:i",
 
-            'questions.mcq' => "required|array|min:1",
-            'questions.mcq.*.question' => "required|string",
-            'questions.mcq.*.answers' => "required|array|min:1",
-            'questions.mcq.*.answers.*.answer' => "required|string",
-            'questions.mcq.*.answers.*.is_correct' => "required|in:0,1",
+            'questions' => "required|array|min:1",
+            
+            'questions.mcq' => "sometimes|array|min:1",
+            'questions.mcq.*' => "required_with:questions.mcq",
+
+            'questions.mcq.*.question' => "required_with:questions.mcq|string",
+            'questions.mcq.*.answers' => "required_with:questions.mcq|array|min:1",
+            'questions.mcq.*.answers.*.answer' => "required_with:questions.mcq|string",
+            'questions.mcq.*.answers.*.is_correct' => "required_with:questions.mcq|in:0,1",
         ];
         /**
          * custom validation massages
@@ -48,13 +52,13 @@ trait EditExam
             'duration.date_format' => "The duration does not match the format HH:MM.",
 
             'questions.mcq.required' => "The questions field is required.",
-            'questions.mcq.*.question.required' => 'The question field is required.',
+            'questions.mcq.*.question.required_with' => 'The question field is required.',
 
-            'questions.mcq.*.answers.required' => 'The answers field is required.',
+            'questions.mcq.*.answers.required_with' => 'This question shuld have at least 1 answer.',
             'questions.mcq.*.answers.array' => 'The answers field must be a array.',
-            'questions.mcq.*.answers.min' => 'This question must have at least :min answer.',
+            'questions.mcq.*.answers.min' => 'This question shuld have at least :min answer.',
 
-            'questions.mcq.*.answers.*.answer.required' => 'The answer field is required.',
+            'questions.mcq.*.answers.*.answer.required_with' => 'The answer field is required.',
             'questions.mcq.*.answers.*.answer.string' => 'The answer field must be a string.',
 
         ];
@@ -81,10 +85,10 @@ trait EditExam
 
             $exam = $this->editexam($data, $request->user());
             $this->removePreviousData($exam);
+
             //insert mcq type questions. 
-            $mcqquestions = $this->McqQuestions($exam, $data);
-            $results = $this->McqsAnswers($mcqquestions, $data);
-            // return response()->json(["errors" => $results], 422);
+            $mcqquestions = $this->insertMcqQuestions($exam, $data);
+            $this->insertMcqAnswersIntoMcqQuestions($mcqquestions, $data);
 
 
 

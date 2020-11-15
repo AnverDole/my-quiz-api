@@ -50,7 +50,7 @@ trait CreateExam
             'duration.date_format' => "The duration does not match the format HH:MM.",
 
             'questions.mcq.required' => "The questions field is required.",
-            'questions.mcq.*.question.required' => 'The question field is required.',
+            'questions.mcq.*.question.required_with' => 'The question field is required.',
 
             'questions.mcq.*.answers.required_with' => 'This question shuld have at least 1 answer.',
             'questions.mcq.*.answers.array' => 'The answers field must be a array.',
@@ -88,8 +88,8 @@ trait CreateExam
             $exam = $this->createexam($data, $request->user());
 
             //insert mcq type questions. 
-            $mcqquestions = $this->McqQuestions($exam, $data);
-            $this->McqsAnswers($mcqquestions, $data);
+            $mcqquestions = $this->insertMcqQuestions($exam, $data);
+            $this->insertMcqAnswersIntoMcqQuestions($mcqquestions, $data);
 
 
             DB::commit();
