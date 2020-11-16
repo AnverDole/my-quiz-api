@@ -30,7 +30,7 @@ class InstructorExamController extends Controller
      */
     public function index(Request $request)
     {
-        $current_page = $request->input("current_page") ?? 1;
+        $current_page = $request->input("current_page", 1);
         if ($current_page < 1 || !is_int($current_page)) {
             $current_page = 1;
         }
