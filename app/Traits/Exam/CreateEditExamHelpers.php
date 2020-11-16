@@ -349,7 +349,6 @@ trait CreateEditExamHelpers
             $question->McqQuestion->delete();
         }
         $exam->Questions()->delete();
-        $exam->delete();
     }
     #endregion
 
