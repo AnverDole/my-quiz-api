@@ -222,12 +222,11 @@ trait CreateEditExamHelpers
                 $this->defineMcqErrorObjectIfNotDefined($errors);
                 $this->defineMcqQuestionErrorObjectIfNotDefined($errors, $questionid);
                 $this->defineMcqQuestionAnswerErrorObjectIfNotDefined($errors, $questionid);
+                $this->defineMcqAnswerErrorObjectIfNotDefined($errors, $questionid);
 
-                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers = [];
-                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers[] = (object)[
-                    'id' => $answerkey,
-                    'message' => $message,
-                ];
+               
+                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers->id = $answerkey;
+                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers->message = $message;
             }
         }
     }
@@ -310,6 +309,17 @@ trait CreateEditExamHelpers
     {
         if (!isset($errors->questionerrors->questions->mcq[$questionid]->answererrors)) {
             $errors->questionerrors->questions->mcq[$questionid]->answererrors = (object)[];
+        }
+    }
+    /**
+     * define the $errors->questionerrors->questions["mcq"][$questionid]->answererrors object if it dose not difined by previous step. 
+     * @param object $errors 
+     * @param integer $questionid
+     */
+    private function defineMcqAnswerErrorObjectIfNotDefined(&$errors, $questionid)
+    {
+        if (!isset($errors->questionerrors->questions->mcq[$questionid]->answererrors->answers)) {
+            $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers = [];
         }
     }
     #endregion
