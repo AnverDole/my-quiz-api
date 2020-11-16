@@ -337,11 +337,19 @@ trait CreateEditExamHelpers
     }
     private function removePreviousData($exam)
     {
+        //remove all student's responses. 
+        foreach ($exam->AnswerSheets as $answersheet) {
+           $answersheet->McqResponses()->delete();
+        }
+        $answersheet->delete();
+
+        //remove exam's relationships. 
         foreach ($exam->Questions as $question) {
             $question->McqQuestion->McqAnswers()->delete();
             $question->McqQuestion->delete();
         }
         $exam->Questions()->delete();
+        $exam->delete();
     }
     #endregion
 
