@@ -8,7 +8,7 @@ use App\Models\Exam\Question;
 use App\Traits\CreateExam;
 use App\Traits\DeleteExam;
 use App\Traits\EditExam;
-use Faker\Factory;
+
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
@@ -109,7 +109,6 @@ class InstructorExamController extends Controller
      */
     function getFormatedExam(Exam $exam)
     {
-        $faker = Factory::create();
         return [
             "id" => $exam->id,
             "title" => $exam->title,

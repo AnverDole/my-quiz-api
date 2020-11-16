@@ -3,13 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AnswerSheet\AnswerSheet;
-use App\Models\AnswerSheet\Mcq\McqResponse;
 use App\Models\Exam\Exam;
 use App\Models\Exam\Mcq\McqAnswer;
 use App\Models\Exam\Mcq\McqQuestion;
 use App\Models\Exam\Question;
-use DateTime;
-use Faker\Factory;
 use App\Models\Role\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -26,7 +23,7 @@ class ExamController extends Controller
         if (!$student) abort(500);
 
         $answersheet = $student->AnswerSheets()->where('exam_id', '=', $exam->id)->first();
-        
+
         if ($answersheet) { //student is alredy taked the exam. 
             if ($answersheet->isSubmited()) abort(401);
             return $this->continueAnswerSheet($exam, $answersheet);
@@ -39,9 +36,9 @@ class ExamController extends Controller
     {
         $data = (object)$this->responseData($exam, $answersheet);
         $data->time_infomation = $this->getAvailableTimeInfomation($exam, $answersheet);
-       
-        
-        if($data->time_infomation["available_time"]["minitues"] < 1){
+
+
+        if ($data->time_infomation["available_time"]["minitues"] < 1) {
             return response()->json(["error" => 'Time is over!'], 401);
         }
         $data->responses = [
@@ -135,9 +132,9 @@ class ExamController extends Controller
         $startedtime = $answersheet->created_at->Settimezone("Asia/colombo");
 
         $shuldbesubmit = $startedtime->copy()->addHours($examDuratationH)->addMinutes($examDuratationM);
-        if(Carbon::now() > $shuldbesubmit){
+        if (Carbon::now() > $shuldbesubmit) {
             $availabletimeM = 0;
-        }else{
+        } else {
         }
         $availabletimeM = $shuldbesubmit->copy()->diffInMinutes(Carbon::now());
 
@@ -161,7 +158,7 @@ class ExamController extends Controller
         ]);
         $student = $request->user()->Student;
         $answersheet = $student->AnswerSheets()->where("exam_id", "=", $data->exam_id)->first();
-        
+
         if ($answersheet->isSubmited()) abort(401);
         $mcqresponses = array_map(function ($response) {
             return [
@@ -183,7 +180,9 @@ class ExamController extends Controller
             "exam_id" => "required|integer|exists:exams,id",
         ]);
         $answersheet = AnswerSheet::find($data->answer_sheet_id);
-        if ($answersheet->isSubmited()) {abort(401);}
+        if ($answersheet->isSubmited()) {
+            abort(401);
+        }
         $answersheet->update([
             "submited_at" => Carbon::now(),
         ]);
@@ -226,7 +225,7 @@ class ExamController extends Controller
             ],
             "marks" => $this->getMarks($answersheet),
             "questions" => [
-                "mcqs" =>  $this->getMcqQuestionsSummery($exam,$answersheet),
+                "mcqs" =>  $this->getMcqQuestionsSummery($exam, $answersheet),
             ]
         ];
     }
@@ -236,13 +235,13 @@ class ExamController extends Controller
         $formatedmcqs = [];
         foreach ($questions as $question) {
             $mcq = $question->McqQuestion;
-            
-           
+
+
             $formatedmcqs[] = [
                 "question" => $mcq->question,
                 "answers" =>  $this->getMcqAnswersSummery($answersheet, $mcq),
                 "correctanswer" => $this->getCorrectMcqAnswer($mcq),
-                "status" => $this->getMcqQuestionStatus($answersheet,$mcq),
+                "status" => $this->getMcqQuestionStatus($answersheet, $mcq),
             ];
         }
         return $formatedmcqs;
@@ -250,7 +249,7 @@ class ExamController extends Controller
     private function getMcqAnswersSummery(AnswerSheet $answersheet, McqQuestion $mcq)
     {
         $mcqanswers = $mcq->McqAnswers;
-        
+
         $formatedmcqanswers = [];
         foreach ($mcqanswers as $mcqanswer) {
             $formatedmcqanswers[] = [
@@ -262,36 +261,42 @@ class ExamController extends Controller
         }
         return $formatedmcqanswers;
     }
-    private function getMcqQuestionStatus(AnswerSheet $answersheet, McqQuestion $mcqquestion){
+    private function getMcqQuestionStatus(AnswerSheet $answersheet, McqQuestion $mcqquestion)
+    {
         $mcqresponse = $this->getMcqResponse($answersheet, $mcqquestion);
         return [
             "is_correct" => $this->isMcqResponseCorrect($mcqquestion, $mcqresponse),
             "is_not_responded" => !$mcqresponse,
         ];
     }
-    private function isMcqResponseCorrect(McqQuestion $mcqquestion, $mcqresponse){
-        if(!$mcqresponse) return false;
+    private function isMcqResponseCorrect(McqQuestion $mcqquestion, $mcqresponse)
+    {
+        if (!$mcqresponse) return false;
         return $mcqquestion->getCorrectMcqAnswer()->id == $mcqresponse->mcq_answer_id;
     }
-   
-    private function isResponseMcq(AnswerSheet $answersheet, McqQuestion $mcqquestion, McqAnswer $mcqanswer){
+
+    private function isResponseMcq(AnswerSheet $answersheet, McqQuestion $mcqquestion, McqAnswer $mcqanswer)
+    {
         $mcqresponse = $this->getMcqResponse($answersheet, $mcqquestion);
 
-        if(!$mcqresponse) return false;
+        if (!$mcqresponse) return false;
         return $mcqresponse->mcq_answer_id == $mcqanswer->id;
     }
-    private function getMcqResponse(AnswerSheet $answersheet,McqQuestion $mcqquestion){
+    private function getMcqResponse(AnswerSheet $answersheet, McqQuestion $mcqquestion)
+    {
         $mcqresponse = $answersheet->McqResponses()->where('mcq_question_id', '=', $mcqquestion->id)->first();
         return $mcqresponse;
     }
-    private function getCorrectMcqAnswer(McqQuestion $mcqquestion){
+    private function getCorrectMcqAnswer(McqQuestion $mcqquestion)
+    {
         $correctanswer = $mcqquestion->getCorrectMcqAnswer();
         return [
             "id" => $correctanswer->id,
-            "answer"=> $correctanswer->answer,
+            "answer" => $correctanswer->answer,
         ];
     }
-    private function getMarks(AnswerSheet $answersheet){
+    private function getMarks(AnswerSheet $answersheet)
+    {
         $totalmcqcount = $answersheet->Exam->Questions()->count();
         $correctmcqcount = $this->getCorrectMcqCount($answersheet);
 
@@ -299,16 +304,17 @@ class ExamController extends Controller
             'totalmcqcount' => $totalmcqcount,
             'correctmcqcount' => $correctmcqcount,
             'totalmarks' => 100,
-            'value' => round(($correctmcqcount/$totalmcqcount)*100, 2),
+            'value' => round(($correctmcqcount / $totalmcqcount) * 100, 2),
         ];
     }
 
-    private function getCorrectMcqCount($answersheet){
+    private function getCorrectMcqCount($answersheet)
+    {
         $responses = $answersheet->McqResponses;
         $count = 0;
-        foreach($responses as $response){
-            if($this->isMcqResponseCorrect($response->McqQuestion, $response)) $count++;
-        }   
+        foreach ($responses as $response) {
+            if ($this->isMcqResponseCorrect($response->McqQuestion, $response)) $count++;
+        }
         return $count;
     }
 }

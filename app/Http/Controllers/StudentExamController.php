@@ -6,13 +6,10 @@ use App\Models\AnswerSheet\AnswerSheet;
 use App\Models\Exam\Exam;
 use App\Models\Exam\Mcq\McqQuestion;
 use App\Models\Role\Student;
-use App\Models\User;
 use Carbon\Carbon;
-use Faker\Factory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 
 class StudentExamController extends Controller
 {
