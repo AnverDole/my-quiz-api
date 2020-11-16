@@ -225,8 +225,10 @@ trait CreateEditExamHelpers
                 $this->defineMcqAnswerErrorObjectIfNotDefined($errors, $questionid);
 
                
-                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers->id = $answerkey;
-                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers->message = $message;
+                $errors->questionerrors->questions->mcq[$questionid]->answererrors->answers[] = (object)[
+                    'id' => $answerkey,
+                    'message' => $message,
+                ];
             }
         }
     }
