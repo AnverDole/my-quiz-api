@@ -1,4 +1,4 @@
-#MyQuiz Api Documentation
+# MyQuiz Api Documentation
 
 ###### This is the api that uses MyQuiz app.
 
@@ -20,7 +20,7 @@
 
 #### Register
 
-#####Endpoint 
+##### Endpoint 
 `/api/register`
 
 ##### Body
@@ -58,7 +58,7 @@
 
 #### Login
 
-#####Endpoint 
+##### Endpoint 
 `/api/login`
 
 ##### Body
@@ -95,7 +95,7 @@
 
 #### get Exams
 
-#####Endpoint 
+##### Endpoint 
 `/api/instructor/exams`
 
 ##### Body
@@ -150,7 +150,7 @@
 
 #### Create new exam
 
-#####Endpoint 
+##### Endpoint 
 `/api/instructor/exams/new-exam`
 
 ##### Body
