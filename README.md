@@ -1,61 +1,192 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+#MyQuiz Api Documentation
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+###### This is the api that uses MyQuiz app.
 
-## About Laravel
+##### Host domain
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+`https://my-quiz-api.herokuapp.com/`
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+##### All request urls must be like following.
+	 Hostname/ + Endpoint
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+#### Eg:
+- `https://my-quiz-api.herokuapp.com/api/login`
 
-## Learning Laravel
+- `https://my-quiz-api.herokuapp.com/api/register`
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## End points
 
-## Laravel Sponsors
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+#### Register
 
-### Premium Partners
+#####Endpoint 
+`/api/register`
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[OP.GG](https://op.gg)**
+##### Body
+```json
+{
+    "email": "wilber81@example.net",
+    "firstname": "Firstname",
+    "lastname": "Lastname",
+    "password": "123456789",
+    "account_type": "INSTRUCTOR"
+}
+```
+##### Success response
+```json
+{
+  "logged": true,
+  "accessToken": "Mhgjerdogtytkvdoforetorpogpdofpskdwmlemretrf...",
+  "account_type"  "INSTRUCTOR"
+  "email":  "wilber81@example.net",
+  "firstname": "Firstname",
+  "lastname": "Lastname",
+}
+```
 
-## Contributing
+##### Validation error response
+```json
+{
+    "email": "Invalid username or password.",
+	"password": "Passwords dont match.",
+}
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+##### Note
+###### After successfull register, save the accessToken field for future use.
 
-## Code of Conduct
+#### Login
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#####Endpoint 
+`/api/login`
 
-## Security Vulnerabilities
+##### Body
+```json
+{
+    "email": "wilber81@example.net",
+    "password": "password"
+}
+```
+##### Success response
+```json
+{
+    "logged": true,
+    "accessToken": "Mhgjerdogtytkvdoforetorpogpdofpskdwmlemretrf...",
+    "firstname" : "First name",
+    "lastname" : "Last name",
+    "account_type" : "INSTRUCTOR",
+    "email" : "wilber81@example.net",
+}
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+##### Validation error response
+```json
+{
+    "email": "You have entered an invalid username or password"
+}
+```
 
-## License
+##### Note
+###### After successfull login, save the accessToken field for future use.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+#### Instructors Account
+
+#### get Exams
+
+#####Endpoint 
+`/api/instructor/exams`
+
+##### Body
+```json
+{
+   "current_page": 1,
+   "per_page": 5
+}
+```
+##### Success response
+```json
+{
+   "exams": [
+   		{
+			"id": 0,
+            "title" "This is the exam title",
+            "duration": "02:20",
+            "question_count": {
+				"mcq": 10,
+			}
+            "student_enrolled": 10,
+		},
+		{
+			"id": 0,
+            "title" "This is the exam title",
+            "duration": "02:20",
+            "question_count": {
+				"mcq": 10,
+			}
+            "student_enrolled": 10,
+		},
+		{
+			"id": 0,
+            "title" "This is the exam title",
+            "duration": "02:20",
+            "question_count": {
+				"mcq": 10,
+			}
+            "student_enrolled": 10,
+		},
+   ],
+   "paginator": {
+		   "total_exams": 8,
+			"current_page": 2,
+			"total_pages": 2,
+			"is_next_page_exists": true,
+			"is_prev_page_exists": true,
+		 },
+}
+```
+
+
+#### Create new exam
+
+#####Endpoint 
+`/api/instructor/exams/new-exam`
+
+##### Body
+```json
+{
+    "title": "Test exam-{{$randomCity}}",
+    "subject": 1,
+    "duration": "00:30",
+    "questions": {
+        "mcq": [
+            {
+                "question": "This is question?",
+                "answers": [
+                  { "answer":"this is answer.", "is_correct":1 },
+                  { "answer":"this is answer.", "is_correct":0 },
+				  { "answer":"this is answer.", "is_correct":0 },
+				  { "answer":"this is answer.", "is_correct":0 }
+                ]
+            },{
+                "question": "This is question?",
+                "answers": [
+                  { "answer":"this is answer.", "is_correct":1 },
+                  { "answer":"this is answer.", "is_correct":0 },
+				  { "answer":"this is answer.", "is_correct":0 },
+				  { "answer":"this is answer.", "is_correct":0 }
+                ]
+            }
+		]
+	}
+}
+```
+##### Success response
+```json
+{
+		"subject_id": 38,
+		"duration": "01:45",
+		"title": "This is title"
+}
+```
